@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from src.routers.hero import hero_router
+import src.routers.hero as hero
 
 app = FastAPI()
-app.include_router(hero_router)
+app.include_router(hero.router)
