@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+SQLAlchemy
+aiofiles
+requests
+Jinja2
+python-multipart
+mangum
+flake8
+python-json-logger
