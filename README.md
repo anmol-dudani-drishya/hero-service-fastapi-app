@@ -1,56 +1,82 @@
-# Hero Service FastAPI app
+# Fastapi Lambda Container
 
-This application is developed to demonstrate the possibilities and capabilities of [FastAPI](https://fastapi.tiangolo.com/)
+Setting up a basic FastAPI application using Lambda Containers
 
-## Awesome things I came to know by developing this application
+## FrameWorks and AWS Services to be used:
+* FastAPI
+* AWS Lambda
+* AWS Elastic Container Registry (ECR)
+* AWS ApiGateWay
+* Docker
 
-- Swagger UI - An Interactive REST API IDE is available by default.
-- ReDoc - OpenAPI Standard Docs for the apis - This integration is also available by  dfault.
-- The Documentation of [fastAPI](https://fastapi.tiangolo.com/) is very good
-- [Pydantic - Data validation and settings management using python type annotations](https://pydantic-docs.helpmanual.io/)
+## WorkFlow Diagram
+<br>
+<img src = "assets/containerWorkFlow.png" width = "700px">
+<br>
+<br
 
-## Use Case
+>
+## Steps to be Followed:
+<br>
+FastAPI Application -> Dockerize -> Push to AWS ECR -> Deploy the latest image to the Lambda -> Attach an APIGateWay
+<br><br>
 
-Many Super heros are available to help. There are plenty of assignments the heros can help with. We need an application to manage the heros time so that we can leverage their capabilities to wrap up most of the assignments.
+Please Note:
 
-## Development
+* Create a Repository on AWS ECR first before pushing. (fastapilambdacontainer in this case)
+* The feature.workflow.yml requires the following github secrets:
+    * AWS Access Key ID
+    * AWS Secret Access Key
+    <br><br>
+    <img src = "assets/secrets.png" width = "500px">
+    <br>
+<br>
+* If you want to push the image to ECR using workflow, checkout deploy.sh file.
+* Create a lambda function and select 'Container Image' from 'Choose one of the following options to create your function.' while creating the function.
+* Once the image is successfully pushed to AWS ECR:
+    * Go to the Lambda Function and select 'Image' from the navigation menu.
+    * Click on 'Deplpy new image'.
+    * Browse for the latest image and click save once you have selected the right image.
+    * Wait for couple of minutes for the image to be deployed.
 
-### Prerequisites
+<br>
 
-- Python 3.6+
-- [Table Plus](https://tableplus.com/)
-  - This is useful while developing and playing with Database
+## Testing the Lambda Container
 
-### Folder Structure
+* Go to the Test tab in the navigation menu in order to test the lambda container.
+* Select 'apigateway-aws-proxy' for Template.
+* Give the event a name.
+* Make sure the following changes are made:
+```
+{
+  "body": "eyJ0ZXN0IjoiYm9keSJ9",
+  "resource": "/{proxy+}",
+  "path": "/test", // Needs to be changed according to the application.
+  "httpMethod": "GET", // Needs to be changed according to the application.
+  "isBase64Encoded": true,
+  "queryStringParameters": {
+    "foo": "bar"
+  },
+    .....
+    ....
 
-```text
-src/                        Source Code
-----models/                 Models/Schemas for SQL Alchemy
-----schemas/                Models/Schemas powered by Pedantic. These used for validation.
-----routers/                Routes for entities/tables
-----repositories/           DataBase operations
-----app.py                  App entry
-----database.py             Database Connection
+    "path": "/test", // Needs to be changed according to the application.
+    "resourcePath": "/{proxy+}",
+    "httpMethod": "GET", // Needs to be changed according to the application.
+    "apiId": "1234567890",
+    "protocol": "HTTP/1.1"
+  }
+}
 ```
 
-### Start the app in development mode
+<br>
 
-Clone this repository
+You will get the following response if you are testing the '/test' route:
 
-```bash
-git clone https://github.com/sravanrekandar/hero-service-fastapi-app.git && cd hero-service-fastapi-app
-```
+<img src = "assets/response.png" width = "500px">
+<br>
 
-Set permissions to execute start.sh. This is required only one time.
+* Attach an APIGateWay to the container. Make sure to use the{proxy} route.
 
-```bash
-chmod 777 start.sh
-```
+* Blog for AWS Lambda Container: https://medium.com/analytics-vidhya/python-fastapi-and-aws-lambda-container-3e524c586f01
 
-```bash
-./start.sh
-```
-
-- App will be available at [http://127.0.0.1:8000](http://127.0.0.1:8000)
-- Swagger UI - An Interactive REST API IDE [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- OpenAPI Docs [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)

@@ -20,8 +20,6 @@ ignore =
     W503
     # No inline html in docs
     MD033
-    # Import at the top of the file
-    E402
 docstring-convention = numpy
 per-file-ignores =
     tests/*: D101, D103

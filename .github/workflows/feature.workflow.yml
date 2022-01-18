@@ -1,0 +1,78 @@
+name: CI-Pipeline to Run Linting(Code Quality) Checks, Build Image and Push to AWS ECR
+env:
+  ECR_REPOSITORY_NAME: "fastapilambdacontainer" # Name of the repository created on AWS ECR
+  AWS_REGION: "us-west-2" # AWS Region
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push for the main and the dev branch
+  push:
+    branches:
+      - main
+      - development
+
+jobs:
+  ci-pipeline:
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Install dependencies with pipenv
+        run: |
+          python -m pip install --upgrade pipenv
+          python -m pipenv install --pre --dev
+
+      - name: Checking for Linting Errors
+        run: |
+          python -m pipenv run flake8
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Completion Message
+        run: echo "CI Pipeline completed"
+
+  build-push-pipeline:
+    runs-on: ubuntu-latest
+    needs: ci-pipeline
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:  ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{GITHUB.SHA}}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker image ls
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Completion Message
+        run: echo "Docker Image Built and Pushed to AWS ECR"
